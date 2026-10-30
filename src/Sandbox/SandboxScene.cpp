@@ -6,15 +6,15 @@
 std::vector<std::vector<char>> map =
 {
     {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' },
-    {'#','#','#','#','#',' ','#',' ',' ',' ' },
-    {' ','#','#','#',' ',' ','#',' ',' ',' ' },
-    {' ',' ','#',' ',' ',' ','#',' ',' ',' ' },
+    {'^','^','^','^','^',' ','#',' ',' ',' ' },
+    {' ','^','^','^',' ',' ','#',' ',' ',' ' },
+    {' ',' ','^',' ','#',' ','#',' ',' ',' ' },
+    {' ',' ',' ',' ','#',' ','#',' ',' ',' ' },
+    {' ',' ',' ',' ','#',' ',' ',' ',' ',' ' },
     {' ',' ',' ',' ',' ',' ','#',' ',' ',' ' },
-    {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' },
-    {' ',' ',' ',' ',' ',' ','#',' ',' ',' ' },
-    {' ',' ',' ',' ',' ',' ','#',' ',' ',' ' },
-    {' ',' ',' ',' ',' ',' ','#','#',' ',' ' },
-    {' ',' ',' ',' ',' ',' ','#','#','#',' ' },
+    {' ',' ',' ',' ','#',' ','#',' ',' ',' ' },
+    {' ',' ',' ',' ','#',' ','#','#',' ',' ' },
+    {' ',' ',' ',' ','#',' ','#','#','#',' ' },
 };
 
 void SandboxScene::OnInitialize()
@@ -44,11 +44,11 @@ Color SandboxScene::GetTileColor(int row, int col)
     Tile* tile = mpGrid->GetTile({ row, col });
     assert(tile);
 
+    if (tile->height > 1)
+        return Color::White;
+
     if (tile->obstacle)
         return Color::Red;
-
-    if (tile->path)
-        return Color::Cyan;
 
     return Color::Gray;
 }
@@ -96,9 +96,16 @@ void SandboxScene::OnUpdate()
         for (int col = 0; col < mpGrid->ColCount; ++col)
         {
             Vector2f pos = { mOffset.x + col * mTileSize.x,  mOffset.y + row * mTileSize.y };
+            pos = pos + mTileSize / 2;
             Color color = GetTileColor(row, col);
 
-            Debug::DrawRectangle(pos, mTileSize, color, true, { 0, 0 }, false);
+            Debug::DrawRectangle(pos, mTileSize, color, true, { 0.5f, 0.5f }, false);
+
+            Tile* tile = mpGrid->GetTile({ row, col });
+            if (tile->path)
+            {
+                Debug::DrawRectangle(pos, mTileSize * 0.25f, Color::Green, true, { 0.5f, 0.5f }, false);
+            }
         }
     }
 

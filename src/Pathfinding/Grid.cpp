@@ -1,6 +1,6 @@
 #include "Grid.h"
 
-#include <queue>
+#include <list>
 #include <algorithm>
 
 Grid::Grid(const std::vector< std::vector<char>>& map)
@@ -17,6 +17,8 @@ Grid::Grid(const std::vector< std::vector<char>>& map)
             Tile& tile = mTiles[row][col];
             tile.coord = { row, col };
             tile.obstacle = map[row][col] == OBSTACLE;
+            tile.height = map[row][col] == HEIGHT ? 5 : 1;
+
             tile.added = false;
             tile.path = false;
             tile.cameFrom = nullptr;
@@ -31,6 +33,8 @@ void Grid::Reset()
         for (int col = 0; col < ColCount; col++)
         {
             Tile& tile = mTiles[row][col];
+
+            tile.cost = -1;
             tile.added = false;
             tile.path = false;
             tile.cameFrom = nullptr;
@@ -57,6 +61,44 @@ Tile* Grid::GetTile(GridCoord coord)
     return &mTiles[coord.row][coord.col];
 }
 
+int GetHeightCost(Tile* t1, Tile* t2)
+{
+    return std::abs(t1->height - t2->height) + 1;
+}
+
+void Reinsert(std::list<Tile*>& remains, Tile* tile)
+{
+    auto it = remains.begin();
+    for (; it != remains.end() && *it != tile; ++it);
+
+
+}
+
+void TryAddTile(std::list<Tile*>& remains, Tile* current, Tile* neighbor)
+{
+    if (neighbor == nullptr)
+        return;
+
+    if (neighbor->obstacle)
+        return;
+
+    int currentCost = current->cost + GetHeightCost(current, neighbor);
+
+    if (neighbor->added)
+    {
+        if (currentCost > neighbor->cost)
+            return;
+    }
+    else
+    {
+        remains.push_back(neighbor);
+    }
+
+    neighbor->cost = currentCost;
+    neighbor->added = true;
+    neighbor->cameFrom = current;
+}
+
 bool Grid::BuildPath(GridCoord startCoord, GridCoord endCoord)
 {
     Reset();
@@ -64,14 +106,15 @@ bool Grid::BuildPath(GridCoord startCoord, GridCoord endCoord)
     Tile* start = GetTile(startCoord);
     Tile* end = GetTile(endCoord);
 
-    std::queue<Tile*> remains;
+    std::list<Tile*> remains;
     start->added = true;
-    remains.push(start);
+    start->cost = 0;
+    remains.push_back(start);
 
     while (remains.size() > 0)
     {
         Tile* current = remains.front();
-        remains.pop();
+        remains.pop_front();
 
         if (current == end)
         {
@@ -94,18 +137,8 @@ bool Grid::BuildPath(GridCoord startCoord, GridCoord endCoord)
             GridCoord coord = current->coord + directions[i];
 
             Tile* neighbor = GetTile(coord);
-            if (neighbor == nullptr)
-                continue;
 
-            if (neighbor->obstacle)
-                continue;
-
-            if (neighbor->added)
-                continue;
-
-            neighbor->added = true;
-            neighbor->cameFrom = current;
-            remains.push(neighbor);
+            TryAddTile(remains, current, neighbor);
         }
     }
 

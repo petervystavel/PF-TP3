@@ -9,6 +9,7 @@
 
 #define EMPTY ' '
 #define OBSTACLE '#'
+#define HEIGHT '^'
 #define PLAYER 'O'
 
 struct GridCoord
@@ -40,10 +41,12 @@ struct Tile
 {
     GridCoord coord;
     bool obstacle;
+    int height;
 
-    bool path;
+    int cost;
     bool added;
     Tile* cameFrom;
+    bool path;
 };
 
 class Grid
