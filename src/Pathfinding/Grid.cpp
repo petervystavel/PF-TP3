@@ -1,7 +1,7 @@
 #include "Grid.h"
 
-#include <list>
 #include <algorithm>
+#include <cassert>
 
 Grid::Grid(const std::vector< std::vector<char>>& map)
 {
@@ -61,42 +61,56 @@ Tile* Grid::GetTile(GridCoord coord)
     return &mTiles[coord.row][coord.col];
 }
 
-int GetHeightCost(Tile* t1, Tile* t2)
+int Grid::GetHeightCost(Tile* t1, Tile* t2)
 {
     return std::abs(t1->height - t2->height) + 1;
 }
 
-void Reinsert(std::list<Tile*>& remains, Tile* tile)
+void Insert(std::list<Tile*>& remains, Tile* tile)
 {
     auto it = remains.begin();
-    for (; it != remains.end() && *it != tile; ++it);
 
+    for (; it != remains.end(); ++it)
+    {
+        if ((*it)->cost > tile->cost)
+            break;
+    }
 
+    remains.insert(it, tile);
 }
 
-void TryAddTile(std::list<Tile*>& remains, Tile* current, Tile* neighbor)
+void Reinsert(std::list<Tile*>& remains, Tile* tile)
 {
-    if (neighbor == nullptr)
+    auto it = std::find(remains.begin(), remains.end(), tile);
+
+    assert(it != remains.end());
+
+    remains.erase(it);
+    Insert(remains, tile);
+}
+
+void Grid::TryAddTile(std::list<Tile*>& remains, Tile* current, Tile* neighbor)
+{
+    if (neighbor == nullptr || neighbor->obstacle)
         return;
 
-    if (neighbor->obstacle)
+    int newCost = current->cost + GetHeightCost(current, neighbor);
+
+    if (neighbor->added && newCost >= neighbor->cost)
         return;
 
-    int currentCost = current->cost + GetHeightCost(current, neighbor);
+    neighbor->cost = newCost;
+    neighbor->cameFrom = current;
 
     if (neighbor->added)
     {
-        if (currentCost > neighbor->cost)
-            return;
+        Reinsert(remains, neighbor);
     }
     else
     {
-        remains.push_back(neighbor);
+        Insert(remains, neighbor);
+        neighbor->added = true;
     }
-
-    neighbor->cost = currentCost;
-    neighbor->added = true;
-    neighbor->cameFrom = current;
 }
 
 bool Grid::BuildPath(GridCoord startCoord, GridCoord endCoord)
@@ -118,7 +132,7 @@ bool Grid::BuildPath(GridCoord startCoord, GridCoord endCoord)
 
         if (current == end)
         {
-            while (current != nullptr)
+            while (current->cameFrom != nullptr)
             {
                 current->path = true;
                 mBuiltPath.push_back(current);

@@ -64,17 +64,23 @@ void SandboxScene::OnUpdate()
     mMouseCoord.x = (int)(mousePos.x / mTileSize.x);
     mMouseCoord.y = (int)(mousePos.y / mTileSize.y);
 
-    //Update
-    if (mIndexBuiltPath < mBuiltPath.size())
-    {
-        mMoveTimer += GetDeltaTime();
-        if (mMoveTimer >= PLAYER_MOVE_DELAY)
-        {
-            Tile* nextTile = mBuiltPath[mIndexBuiltPath];
-            SetPlayerCoord(nextTile->coord);
+    // Update
+    mMoveTimer += GetDeltaTime();
 
-            mMoveTimer -= PLAYER_MOVE_DELAY;
-            mIndexBuiltPath++;
+    if (mIndexBuiltPath < mBuiltPath.size() &&
+        mMoveTimer >= mMoveDelay)
+    {
+        Tile* current = mpGrid->GetTile(mPlayerCoord);
+        Tile* next = mBuiltPath[mIndexBuiltPath];
+
+        SetPlayerCoord(next->coord);
+        mMoveTimer -= mMoveDelay;
+
+        mIndexBuiltPath++;
+        if (mIndexBuiltPath < mBuiltPath.size())
+        {
+            float heightCost = mpGrid->GetHeightCost(next, mBuiltPath[mIndexBuiltPath]);
+            mMoveDelay = PLAYER_MOVE_DELAY * heightCost;
         }
     }
 
@@ -85,8 +91,14 @@ void SandboxScene::OnUpdate()
         if (found && input->IsMouseDown(SDL_BUTTON_LEFT))
         {
             mBuiltPath = mpGrid->GeBuiltPath();
+            assert(mBuiltPath.empty() == false);
+
             mIndexBuiltPath = 0;
-            mMoveTimer = 0.f;
+            mMoveTimer = 0.0f;
+
+            Tile* current = mpGrid->GetTile(mPlayerCoord);
+            float heightCost = mpGrid->GetHeightCost(current, mBuiltPath[0]);
+            mMoveDelay = PLAYER_MOVE_DELAY * heightCost;
         }
     }
 

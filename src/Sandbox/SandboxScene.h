@@ -19,6 +19,7 @@ class SandboxScene : public Scene
     std::vector<Tile*> mBuiltPath;
     int mIndexBuiltPath;
     float mMoveTimer;
+    float mMoveDelay;
 
 protected:
     void OnInitialize() override;

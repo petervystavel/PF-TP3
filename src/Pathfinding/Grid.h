@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
 
 #define BG_RED "\033[41m"
 #define BG_GREEN "\033[42m"
@@ -68,5 +69,10 @@ public:
 
     bool BuildPath(GridCoord startCoord, GridCoord endCoord);
 
+    int GetHeightCost(Tile* t1, Tile* t2);
+
     const std::vector<Tile*>& GeBuiltPath() { return mBuiltPath; }
+
+private:
+    void TryAddTile(std::list<Tile*>& remains, Tile* current, Tile* neighbor);
 };
